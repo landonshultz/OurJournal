@@ -30,4 +30,3 @@ restart the client and enable OurJournal in the AddOns list.
 
 Keep changes small and review the diff before committing. Test behavior
 inside the beta client, since its Lua environment supplies the WoW APIs.
-Comments should explain decisions that are not clear from the code itself.
