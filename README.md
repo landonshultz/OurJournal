@@ -1,6 +1,6 @@
 # OurJournal
 
-An immersive fantasy diary addon for the WoW Forever beta.
+An immersive diary addon for the WoW Forever beta.
 
 ## Current state
 
