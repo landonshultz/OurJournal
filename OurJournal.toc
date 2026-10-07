@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: OurJournal
+## Notes: An immersive fantasy diary for WoW Forever.
+## Author: OurJournal
+## Version: 0.1.0
+
+OurJournal.lua
