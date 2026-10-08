@@ -2,7 +2,7 @@
 ## Title: OurJournal
 ## Notes: An immersive diary for WoW Forever.
 ## Author: OurJournal
-## Version: 0.3.0
+## Version: 0.4.0
 ## SavedVariablesPerCharacter: OurJournalDB
 
 Storage.lua

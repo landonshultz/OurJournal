@@ -9,9 +9,23 @@ local function EntryDate(entry)
     return date("%Y-%m-%d %H:%M", entry.createdAt)
 end
 
+local function CurrentLocation()
+    local zone = GetRealZoneText()
+    local area = GetSubZoneText()
+    if area and area ~= "" and area ~= zone then
+        if zone and zone ~= "" then
+            return area .. ", " .. zone
+        end
+        return area
+    end
+    return zone ~= "" and zone or nil
+end
+
 local function CreateJournal()
     local selectedId
     local savedText = ""
+    local savedTitle = ""
+    local draftLocation
     local pendingAction
     local rows = {}
 
@@ -67,9 +81,18 @@ local function CreateJournal()
     local heading = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     heading:SetPoint("TOPLEFT", 246, -48)
     heading:SetText("New entry")
+    heading:SetHeight(18)
+
+    local titleLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    titleLabel:SetPoint("TOPLEFT", 246, -76)
+    titleLabel:SetText("Title")
+    local entryTitle = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+    entryTitle:SetPoint("TOPLEFT", 288, -68)
+    entryTitle:SetSize(442, 26)
+    entryTitle:SetAutoFocus(false)
 
     local paper = CreateFrame("Frame", nil, frame)
-    paper:SetPoint("TOPLEFT", 238, -72)
+    paper:SetPoint("TOPLEFT", 238, -106)
     paper:SetPoint("BOTTOMRIGHT", -18, 94)
     paper:EnableMouse(true)
     local paperBackground = paper:CreateTexture(nil, "BACKGROUND")
@@ -87,7 +110,7 @@ local function CreateJournal()
     editor:SetShadowOffset(0, 0)
     local font = editor:GetFont()
     editor:SetFont(font, 14, "")
-    editor:SetSize(464, 274)
+    editor:SetSize(464, 240)
     scroll:SetScrollChild(editor)
 
     local function FocusEditor(self, button)
@@ -128,6 +151,7 @@ local function CreateJournal()
         new:Enable()
         delete:SetEnabled(selectedId ~= nil)
         editor:EnableMouse(true)
+        entryTitle:EnableMouse(true)
     end
 
     local function Ask(message, label, action)
@@ -137,6 +161,8 @@ local function CreateJournal()
         pendingAction = action
         editor:ClearFocus()
         editor:EnableMouse(false)
+        entryTitle:ClearFocus()
+        entryTitle:EnableMouse(false)
         new:Disable()
         delete:Disable()
         save:Hide()
@@ -147,7 +173,14 @@ local function CreateJournal()
     end
 
     local function Dirty()
-        return editor:GetText() ~= savedText
+        return editor:GetText() ~= savedText or entryTitle:GetText() ~= savedTitle
+    end
+
+    local function UpdateHeading(entry)
+        local label = entry and EntryDate(entry) or "New entry"
+        heading:SetText(label .. " — " .. (draftLocation or "Location not recorded"))
+        heading:SetWidth(486)
+        heading:SetJustifyH("LEFT")
     end
 
     local RefreshList
@@ -155,10 +188,18 @@ local function CreateJournal()
         local entry = id and Journal.FindEntry(id)
         selectedId = entry and entry.id or nil
         savedText = entry and entry.text or ""
+        savedTitle = entry and entry.title or ""
+        if entry then
+            draftLocation = entry.location
+        else
+            draftLocation = CurrentLocation()
+        end
+        entryTitle:SetText(savedTitle)
+        entryTitle:ClearFocus()
         editor:SetText(savedText)
         editor:ClearFocus()
         scroll:SetVerticalScroll(0)
-        heading:SetText(entry and EntryDate(entry) or "New entry")
+        UpdateHeading(entry)
         status:SetText(entry and "Saved entry" or "Write an entry, then click Save.")
         delete:SetEnabled(selectedId ~= nil)
         RefreshList()
@@ -208,7 +249,8 @@ local function CreateJournal()
             end
             row.entryId = entry.id
             row.date:SetText(EntryDate(entry))
-            row.preview:SetText(entry.text:match("[^\r\n]+") or "Empty entry")
+            row.preview:SetText(entry.title and entry.title:find("%S") and entry.title
+                or entry.text:match("[^\r\n]+") or "Empty entry")
             row.selected:SetShown(entry.id == selectedId)
             row:Show()
         end
@@ -225,6 +267,24 @@ local function CreateJournal()
         if userInput then
             status:SetText(Dirty() and "Unsaved changes" or "No unsaved changes")
         end
+    end)
+    entryTitle:SetScript("OnTextChanged", function(self, userInput)
+        if userInput then
+            status:SetText(Dirty() and "Unsaved changes" or "No unsaved changes")
+        end
+    end)
+    entryTitle:SetScript("OnEditFocusGained", function(self)
+        if pendingAction then
+            self:ClearFocus()
+        end
+    end)
+    entryTitle:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus()
+        editor:SetFocus()
+    end)
+    entryTitle:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+        frame:Hide()
     end)
     editor:SetScript("OnEditFocusGained", function(self)
         if pendingAction then
@@ -246,6 +306,7 @@ local function CreateJournal()
     end)
     frame:SetScript("OnHide", function()
         editor:ClearFocus()
+        entryTitle:ClearFocus()
         frame:StopMovingOrSizing()
         EndConfirmation()
         status:SetText(Dirty() and "Unsaved changes" or "No unsaved changes")
@@ -260,14 +321,18 @@ local function CreateJournal()
             status:SetText("Write something before saving.")
             return
         end
-        selectedId = Journal.SaveEntry(selectedId, text, time())
+        local titleText = entryTitle:GetText():match("^%s*(.-)%s*$")
+        selectedId = Journal.SaveEntry(selectedId, text, time(), titleText, draftLocation)
         if not selectedId then
             status:SetText("Unable to find this entry. Your draft is still here.")
             return
         end
         savedText = text
+        savedTitle = titleText
+        entryTitle:SetText(titleText)
+        entryTitle:ClearFocus()
         editor:ClearFocus()
-        heading:SetText(EntryDate(Journal.FindEntry(selectedId)))
+        UpdateHeading(Journal.FindEntry(selectedId))
         delete:Enable()
         status:SetText("Saved")
         RefreshList()

@@ -4,10 +4,15 @@ An immersive diary addon for the WoW Forever beta.
 
 ## Current state
 
-Version 0.3.0 provides a list of entries for each character. Use `/ourjournal`
+Version 0.4.0 provides a list of entries for each character. Use `/ourjournal`
 (or `/oj`) to open or close the journal. Click New to begin an entry, then
 Save to add it to the list. Select an existing entry to read or edit it.
 Delete asks for confirmation before removing the selected entry.
+
+Entries can have an optional title, shown in the list. A new entry captures
+your current area and zone when you start it; saving or editing later keeps
+that original location. Older entries display Location not recorded until
+we have a way to add historical locations manually.
 
 Save before reloading or logging out. Unsaved edits remain while closing
 and reopening the panel, but are lost when the UI reloads or the session ends.
@@ -39,11 +44,17 @@ restart the client and enable OurJournal in the AddOns list.
 7. Write enough lines to scroll. Create enough entries to scroll the list.
 8. Log out and back in, then check the entries again. On another character,
    check that the journal uses a separate list.
+9. Create an entry with a title and check its location. Move to another
+   area before saving; check that the original location stays attached.
+10. Rename an entry, save, and reload. Check that the title persists and
+    existing text, dates, and locations remain unchanged. Change only a title
+    without saving and check that switching entries prompts to discard it.
 
 Use `/oj build` to report the client version, build, and interface number.
 
 The entry list, editing, migration, deletion, and reload persistence were
 tested in the beta client on the build above.
+Titles and captured locations were also tested in version 0.4.0.
 
 ## Keeping your journal
 

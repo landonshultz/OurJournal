@@ -24,6 +24,10 @@ local function ValidateDatabase(db)
             or (entry.updatedAt ~= nil and type(entry.updatedAt) ~= "number") then
             return false
         end
+        if (entry.title ~= nil and type(entry.title) ~= "string")
+            or (entry.location ~= nil and type(entry.location) ~= "string") then
+            return false
+        end
         ids[entry.id] = true
         highestId = math.max(highestId, entry.id)
     end
@@ -64,13 +68,14 @@ function Journal.FindEntry(id)
     end
 end
 
-function Journal.SaveEntry(id, text, timestamp)
+function Journal.SaveEntry(id, text, timestamp, title, location)
     if id then
         local entry = Journal.FindEntry(id)
         if not entry then
             return nil
         end
         entry.text = text
+        entry.title = title or entry.title
         entry.updatedAt = timestamp
         return entry.id
     end
@@ -80,6 +85,8 @@ function Journal.SaveEntry(id, text, timestamp)
     table.insert(OurJournalDB.entries, 1, {
         id = newId,
         text = text,
+        title = title or "",
+        location = location,
         createdAt = timestamp,
         updatedAt = timestamp,
     })
